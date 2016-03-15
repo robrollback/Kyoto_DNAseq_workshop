@@ -1,3 +1,3 @@
 For speed, you can align each in parallel
 
-To track where the reads came from. We will set individual Read Group tags
+However it is important to set Read Group tags to track where the reads came from

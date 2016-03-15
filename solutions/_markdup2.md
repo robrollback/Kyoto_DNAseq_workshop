@@ -1,2 +1,4 @@
-PCR reactions (PCR duplicates)
-Some clusters that are thought of being separate in the flowcell but are the same (optical duplicates)
+Two types of duplicates
+
+* PCR duplicates     : The amplication of the same molecule or template during the PCR reaction step in library preperation.
+* Optical duplicates : Sequencing error generated when a cluster is read twice due to their close proximity on the flowcell.

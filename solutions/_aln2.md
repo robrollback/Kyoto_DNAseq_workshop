@@ -1,5 +1,7 @@
-Many tools require it (not the best reason)
+1. Prerequesite for many tools (not the best reason)
 
-To help differentiate lanes of sequencing in the final BAM
+2. To help differentiate lanes of sequencing in the final BAM
 
-When generating metrics, many tools can use this information to generate separate metrics
+3. When generating metrics, many tools can use this information to generate separate metrics
+
+Note: -R option contains the Read group information

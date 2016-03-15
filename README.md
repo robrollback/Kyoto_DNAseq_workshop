@@ -1,11 +1,14 @@
 
 # Introduction to DNA-Seq processing
-***By Mathieu Bourgey, Ph.D***
+***By Louie Letourneau, MSc., Mathieu Bourgey, Ph.D and Robert Eveleigh, MSc.***
 
-In this workshop, we will present the main steps that are commonly used to process and to analyze sequencing data. We will focus only on whole genome data and provide command lines that allow detecting Single Nucleotide Variants (SNV), for a question of time we will only present the rational for the detection of Structural Variant (SV including CNV). This workshop will show you how to launch individual steps of a complete DNA-Seq pipeline
+In this workshop, we will present the main steps that are commonly used to process and to analyze sequencing data. We will focus only on whole genome data and provide command lines that allow detecting Single Nucleotide Variants (SNV). This workshop will show you how to launch individual steps of a complete DNA-Seq pipeline
 
-We will be working on a 1000 genome sample, NA12878. You can find the whole raw data on the 1000 genome website:
-http://www.1000genomes.org/data
+![Data processing diagram](img/dnaseq_pipeline.jpg)
+
+We will be working on a 1000 genome sample, NA12878. You can find the whole raw data on the 1000 genome [website](http://www.1000genomes.org/data)
+
+![pedigree](img/pedigree.jpg)
 
 For practical reasons we subsampled the reads from the sample because running the whole dataset would take way too much time and resources.
 
@@ -23,7 +26,7 @@ The initial structure of your folders should look like this:
 ```
 
 ### Cheat file
-* You can find all the unix command lines of this practical in the file: commands.sh
+* You can find all the unix command lines of this practical in the file: [commands.sh](scripts/commands.sh)
 
 
 ### Environment setup
@@ -101,11 +104,13 @@ zgrep -c "^@" raw_reads/NA12878/runSRR_1/NA12878.SRR.33.pair1.fastq.gz
 
 
 ### Quality
-We can't look at all the reads. Especially when working with whole genome 30x data. You could easily have Billions of reads.
+We can't look at all the reads. Especially when working with whole genome 30x data. You could easily have billions of reads.
 
 Tools like FastQC and BVATools readsqc can be used to plot many metrics from these data sets.
 
 Let's look at the data:
+
+Try commands:
 
 ```
 mkdir originalQC/
@@ -131,44 +136,26 @@ Open the images
 **What stands out in the graphs ?**
 [Solution](solutions/_fastqQC1.md)
 
-All the generated graphics have their uses. But 2 of them are particularly useful to get an overal picture of how good or bad a run went.
-	- The Quality box plots 
-	- The nucleotide content graphs.
-	- The Box plot shows the quality distribution of your data.
+All the generated graphics have their uses. Two particularly useful to get an overall picture of sequencing quality.
+* The quality box plots - Box whisker type plots showing the quality distribution of your data
+* The nucleotide content graphs - Plots the proportion of each base position in a file
+
+General observations:
  
-The quality of a base is computated using the Phread quality score.
-[notes](notes/_fastQC1.md) 
-
-
-The quality of a base is computated using the Phread quality score.
-![Phred quality score formula](img/phred_formula.png)
-
-In the case of base quality the probability use represents the probability of base to have been wrongly called
-![Base Quality values](img/base_qual_value.png)
-
-The formula outputs an integer that is encoded using an ASCII table. 
-
-The way the lookup is done is by taking the the phred score adding 33 and using this number as a lookup in the table.
-
-Older illumina runs were using phred+64 instead of phred+33 to encode their fastq files.
-
-![ACII table](img/ascii_table.png)
-
-
-Of the raw data we see that:
- 
-   - Some reads have bad 3' ends.
-   - Some reads have adapter sequences in them.
-
-**Why do we see adapters in SRR ?** [solution](solutions/_adapter1.md)
-
-Although nowadays this doesn't happen often, it does still happen. In some cases, miRNA, it is expected to have adapters.
+* Some reads have bad 3' ends.
+* Some reads have adapter sequences in them.
 
 
 ### Trimming
-Since adapter are not part of the genome they should be removed
+Trimming of the reads is required to remove the low quality bases at the 3' end, include reads of a specific minimum length and trim adapters and other technical sequences
 
-To do that we will use Trimmomatic.
+To do that we will use Trimmomatic using these options:
+* ILLUMINACLIP: Cut adapter and other illumina-specific sequences from the read (2:30:15)
+* TRAILING: Cut bases off the end of a read, if below a threshold quality (20)
+* MINLEN: Drop the read if it is below a specified length (32)
+* TOPHRED33: Convert quality scores to Phred-33
+
+[note on trimmomatic command](notes/_trimmomatic.md)
  
 The adapter file is in your work folder. 
 
@@ -179,8 +166,7 @@ cat adapters.fa
 **Why are there 2 different ones ?** [Solution](/solutions/_trim1.md)
 
 
-trimming with trimmomatic:
-
+Try command:
 
 ```
 mkdir -p reads/NA12878/runSRR_1/
@@ -209,11 +195,12 @@ java -Xmx2G -cp $TRIMMOMATIC_JAR org.usadellab.trimmomatic.TrimmomaticPE -thread
 cat reads/NA12878/runERR_1/NA12878.ERR.trim.out reads/NA12878/runSRR_1/NA12878.SRR.trim.out
 ```
 
-[note on trimmomatic command](notes/_trimmomatic.md)
 
 **What does Trimmomatic says it did ?** [Solution](solutions/_trim2.md)
 
 Let's look at the graphs now
+
+Try command:
 
 ```
 mkdir postTrimQC/
@@ -238,6 +225,8 @@ The raw reads are now cleaned up of artefacts we can align each lane separatly.
 **Why is it important to set Read Group information ?** [Solution](solutions_aln2.md)
 
 ##Alignment with bwa-mem
+
+Try command:
 
 ```
 mkdir -p alignment/NA12878/runERR_1
@@ -268,16 +257,14 @@ bwa mem -M -t 2 \
 
 **Could we have done it differently ?** [Solution](solutions/_aln4.md)
 
-We will explore the generated BAM latter if we get enough time.
+We will explore the generated BAM format in the next section.
 
 ## Lane merging
-We now have alignments for each of the sequences lanes:
- 
-   - This is not practical in it's current form. 
-   - What we wan't to do now is merge the results into one BAM.
+The results lane-specific bam will now to merged into one bam file for further processing.
 
-Since we identified the reads in the BAM with read groups, even after the merging, we can still identify the origin of each read.
+Since we tagged each read in the BAM by read group, upon merging we can still identify the origin of each read.
 
+Try command:
 
 ```
 java -Xmx2G -jar ${PICARD_JAR} MergeSamFiles \
@@ -299,28 +286,27 @@ samtools view -H alignment/NA12878/NA12878.sorted.bam | grep "^@RG"
 
 You should have your 2 read group entries.
 
-**Why did we use the -H switch? ** [Solution](solutions/_merge1.md)
+**Why did we use the -H switch?** [Solution](solutions/_merge1.md)
 
 **Try without. What happens?** [Solution](solutions/_merge2.md)
 
 [lane merging note](notes/_merge1.md)
 
 
-# Cleaning up alignments
-We started by cleaning up the raw reads. Now we need to fix some alignments.
+# Post-processing BAMs to remove technical errors
+We began by running quality control tools on the raw reads. Additional steps are also required to fix biases introduced at various point of the data processing procedures.
 
-The first step for this is to realign around indels and snp dense regions.
 
-The Genome Analysis toolkit has a tool for this called IndelRealigner.
+##Indel Realignment
+Due to the heuristics of the alignment algorithm (i.e. each read pair is optimized independent of the full alignment context), mismatches can be introduced near regions of insertions and deletions (indels). 
 
-It basically runs in 2 steps:
- 
-   1. Find the targets
-   2. Realign them
+The Genome Analysis ToolKit (GATK) has a tool called IndelRealigner which performs two steps
+
+   1. Realigner Target Create : Identifies small suspicious regions requiring realignment
+   2. Indel Realigner         : Uses the full alignment context to determine if a indel exist
 	
-
-##GATK IndelRealigner
-
+Try command:
+    
 ```
 java -Xmx2G  -jar ${GATK_JAR} \
   -T RealignerTargetCreator \
@@ -338,38 +324,34 @@ java -Xmx2G -jar ${GATK_JAR} \
 
 ```
 
-**How could we make this go faster ?** [Solution](solutions/_realign1.md)
+**How could we make this go faster?** [Solution](solutions/_realign1.md)
 
-**How many regions did it think needed cleaning ?** [Solution](solutions/_realign2.md)
+**How many regions did it think needed cleaning?** [Solution](solutions/_realign2.md)
 
 
 ## FixMates
-Why ?
-  
-   - Some read entries don't have their mate information written properly.
+This step ensures that all mate-pair information is in rync between each read and its mate pair.
 
-We use Picard to do this:
+**NOTE: This step is deprecated now since indel realignment performs this step. We shall skip this due to time constrains**
 
-```
-java -Xmx2G -jar ${PICARD_JAR} FixMateInformation \
-  VALIDATION_STRINGENCY=SILENT CREATE_INDEX=true SORT_ORDER=coordinate MAX_RECORDS_IN_RAM=500000 \
-  INPUT=alignment/NA12878/NA12878.realigned.sorted.bam \
-  OUTPUT=alignment/NA12878/NA12878.matefixed.sorted.bam
-```
 
 ## Mark duplicates
-**What are duplicate reads ?** [Solution](solutions/_markdup1.md)
+This procedure removes/marks duplicate reads in your bam file. Removing/marking duplicates from an analyses can prevent skewed allele frequencies in SNP discovery, false expression profiles in RNA-seq experiments, etc.
 
-**What are they caused by ?** [Solution](solutions/_markdup2.md)
+**So what are duplicate reads?** [Solution](solutions/_markdup1.md)
 
-**What are the ways to detect them ?** [Solution](solutions/_markdup3.md)
+**What causes these type of reads?** [Solution](solutions/_markdup2.md)
 
-Here we will use picards approach:
+**How are duplicated reads detected?** [Solution](solutions/_markdup3.md)
+
+Here we will use Picard approach:
+
+Try these command:
 
 ```
 java -Xmx2G -jar ${PICARD_JAR} MarkDuplicates \
   REMOVE_DUPLICATES=false CREATE_MD5_FILE=true VALIDATION_STRINGENCY=SILENT CREATE_INDEX=true \
-  INPUT=alignment/NA12878/NA12878.matefixed.sorted.bam \
+  INPUT=alignment/NA12878/NA12878.realigned.sorted.bam \
   OUTPUT=alignment/NA12878/NA12878.sorted.dup.bam \
   METRICS_FILE=alignment/NA12878/NA12878.sorted.dup.metrics
 ```
@@ -380,11 +362,11 @@ We can look in the metrics output to see what happened.
 less alignment/NA12878/NA12878.sorted.dup.metrics
 ```
 
-**How many duplicates were there ?** [Solution](solutions/_markdup4.md)
+**How many duplicates were there?** [Solution](solutions/_markdup4.md)
 
 We can see that it computed separate measures for each library.
  
-**Why is this important to do not combine everything ?** [Solution](solutions/_markdup5.md)
+**Why is this important to do not combine everything?** [Solution](solutions/_markdup5.md)
 
 [Note on Duplicate rate](notes/_marduop1.md)
 
@@ -392,6 +374,7 @@ We can see that it computed separate measures for each library.
 **Why do we need to recalibrate base quality scores ?** [Solution](solutions/_recal1.md)
 
 GATK BaseRecalibrator:
+Accurately recalibrates base quality scores by correcting for various sources of systematic technical error e.g. sequence context, mismatch position within read, etc.
 
 ```
 java -Xmx2G -jar ${GATK_JAR} \
@@ -414,21 +397,23 @@ java -Xmx2G -jar ${GATK_JAR} \
 
 
 # Extract BAM metrics
-Once your whole bam is generated, it's always a good thing to check the data again to see if everything makes sens.
+Now all refinement steps of the bam are complete. Now it is best to perform a quality check of the data.
 
 **Compute coverage**
-If you have data from a capture kit, you should see how well your targets worked
+    For Exome data the capture kit regions are used to verify how well your targets were captured
 
 **Insert Size**
-It tells you if your library worked
+    Used to validate the quality of the library preparaion
 
 **Alignment metrics**
-It tells you if your sample and you reference fit together
+    Verifies the concordance between your sample and the reference genome
 
 ## Compute coverage
 Both GATK and BVATools have depth of coverage tools. 
 
-Here we'll use the GATK one
+**GATK DepthOfCoverage**
+
+Try command:
 
 ```
 java  -Xmx2G -jar ${GATK_JAR} \
@@ -461,7 +446,9 @@ It corresponds to the size of DNA fragments sequenced.
 
 Different from the gap size (= distance between reads) !
 
-These metrics are computed using Picard:
+These metrics are computed using Picard CollectInsertSizeMetrics:
+
+Try command:
 
 ```
 java -Xmx2G -jar ${PICARD_JAR} CollectInsertSizeMetrics \
@@ -473,7 +460,7 @@ java -Xmx2G -jar ${PICARD_JAR} CollectInsertSizeMetrics \
   METRIC_ACCUMULATION_LEVEL=LIBRARY
 ```
 
-look at the output
+Look at the output:
 
 ```
 less -S alignment/NA12878/NA12878.sorted.dup.recal.metric.insertSize.tsv
@@ -528,7 +515,7 @@ samtools mpileup -L 1000 -B -q 1 -g \
 
 [note on samtools mpileup and bcftools command](notes/_mpileup.md)
 
-Now we have variants from all three methods. Let's compress and index the vcfs for futur visualisation.
+Now we have variants from all three methods. Let's compress and index the vcfs for future visualisation.
 
 ```
 bgzip -c variants/mpileup.vcf > variants/mpileup.vcf.gz
@@ -555,89 +542,6 @@ Some values are are almost always there:
    - The per-sample genotype (GT) values.
 
 [note on the vcf format fields](notes/_vcf1.md)
-
-# Annotations
-We typically use snpEff but many use annovar and VEP as well.
-
-Let's run snpEff:
-
-```
-java  -Xmx6G -jar ${SNPEFF_HOME}/snpEff.jar \
-  eff -v -c ${SNPEFF_HOME}/snpEff.config \
-  -o vcf \
-  -i vcf \
-  -stats variants/mpileup.snpeff.vcf.stats.html \
-  GRCh37.74 \
-  variants/mpileup.vcf \
-  > variants/mpileup.snpeff.vcf
-```
-
-Look at the new vcf file:
-
-```
-less -S variants/mpileup.snpeff.vcf
-```
-
-**Can you see the difference with the previous vcf ?**[solution](solutions/_snpeff1.md)
-
-
-For now we will not explore this step since you will be working with gene annotations in your next workshop.
-
-You could also take a look at the HTML stats file snpEff created: it contains some metrics on the variants it analyzed.
-
-
-## Data visualisation
-The Integrative Genomics Viewer (IGV) is an efficient visualization tool for interactive exploration of large genome datasets. 
-
-![IGV browser presentation](img/igv.png)
-
-Before jumping into IGV, we'll generate a track IGV can use to plot coverage:
-
-```
-igvtools count \
-  -f min,max,mean \
-  alignment/NA12878/NA12878.sorted.dup.recal.bam \
-  alignment/NA12878/NA12878.sorted.dup.recal.bam.tdf \
-  b37
-```
-
-Then:
- 
-   1. Open IGV
-   2. Chose the reference genome corresponding to those use for alignment (b37)
-   3. Load bam file
-   4. Load vcf file
-
-Explore/play with the data: 
- 
-   - find an indel
-   - Look around...
-
-#Rational on Structural Variant calling methods
-
-What are structural variants ?
-
-![SV examples](img/SV.png) 
-
-## Read pair methods
-Identification of read pairs clusters with abnormal inserts size or orientation
-
-![PER method](img/per.png)
-
-##Depth of coverage methods
-Identification of genomic regions harbouring a lack or an excess of reads
-
-![DOC method](img/doc.png)
-
-##Split read methods
-local alignment in a targeted genomic region of unmapped ends from one-end-anchored reads
-
-![SR method](img/sr.png)
-
-##Assembly methods
-It performs a de novo assemblies followed by local permissive alignments
-
-![DN method](img/dn.png)
 
 
 #Add-on
