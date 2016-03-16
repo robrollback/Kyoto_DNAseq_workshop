@@ -1,6 +1,7 @@
 
 # Introduction to DNA-Seq processing
-***By Louie Letourneau, MSc., Mathieu Bourgey, Ph.D and Robert Eveleigh, MSc.***
+***By Louie Letourneau, MSc.*** 
+***Edited and Modified by Mathieu Bourgey, Ph.D and Robert Eveleigh, MSc.***
 
 In this workshop, we will present the main steps that are commonly used to process and to analyze sequencing data. We will focus only on whole genome data and provide command lines that allow detecting Single Nucleotide Variants (SNV). This workshop will show you how to launch individual steps of a complete DNA-Seq pipeline
 
@@ -13,17 +14,6 @@ We will be working on a 1000 genome sample, NA12878. You can find the whole raw 
 For practical reasons we subsampled the reads from the sample because running the whole dataset would take way too much time and resources.
 
 This work is licensed under a [Creative Commons Attribution-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-sa/3.0/deed.en_US). This means that you are able to copy, share and modify the work, as long as the result is distributed under the same license.
-
-## Original Setup
-
-The initial structure of your folders should look like this:
-```
-<ROOT>
-|-- raw_reads/               # fastqs from the center (down sampled)
-    `-- NA12878              # One sample directory
-        |-- runERR_1         # Lane directory by run number. Contains the fastqs
-        `-- runSRR_1         # Lane directory by run number. Contains the fastqs
-```
 
 ### Cheat file
 * You can find all the unix command lines of this practical in the file: [commands.sh](scripts/commands.sh)
@@ -41,6 +31,19 @@ export REF=/home/mBourgey/kyoto_workshop_WGS_2015/references/
 cd $HOME 
 rsync -avP /home/mBourgey/cleanCopy/ $HOME/workshop 
 cd $HOME/workshop/ 
+
+ls
+```
+
+## Workspace setup
+
+The initial structure of your folders should look like this:
+```
+<ROOT>
+|-- raw_reads/               # fastqs from the center (down sampled)
+    `-- NA12878              # One sample directory
+        |-- runERR_1         # Lane directory by run number. Contains the fastqs
+        `-- runSRR_1         # Lane directory by run number. Contains the fastqs
 ```
 
 ### Software requirements
@@ -49,17 +52,15 @@ These are all already installed, but here are the original links.
   * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
   * [BVATools](https://bitbucket.org/mugqic/bvatools/downloads)
   * [SAMTools](http://sourceforge.net/projects/samtools/)
-  * [IGV](http://www.broadinstitute.org/software/igv/download)
   * [BWA](http://bio-bwa.sourceforge.net/)
   * [Genome Analysis Toolkit](http://www.broadinstitute.org/gatk/)
   * [Picard](http://picard.sourceforge.net/)
-  * [SnpEff](http://snpeff.sourceforge.net/)
+  
 
-
-# First data glance
+# Inspect Data
 So you've just received an email saying that your data is ready for download from the sequencing center of your choice.
 
-**What should you do ?** [solution](solutions/_data.md)
+**What should you do?** [solution](solutions/_data.md)
 
 
 ### Fastq files
@@ -101,6 +102,47 @@ zgrep -c "^@" raw_reads/NA12878/runSRR_1/NA12878.SRR.33.pair1.fastq.gz
 ```
 
 [Solution](solutions/_fastq3.md)
+
+####Phred Score
+In the original implementation of Phred scores, information about the size and shape of peaks in sequencing trace files were used to generate an error probability and subsequently converted to a log score. 
+
+The same principles are used for base quality made by the base calling method of the NGS sequencer i.e the base quality is the probability of the base to have been called incorrectly
+
+```
+Phred score/Base quality  = - 10 * log10(error probability)
+
+e.g. Base Quality of 10
+
+    10 = -10 * log10(error probability)
+    -1 = log10(error probability)
+    10^-1 = error probability           *this means 10 to the -1 power
+    1 / 10 = error probability
+
+```
+
+| Phred Quality Score | Probability of incorrect base call | Base call accuracy |
+| ------------------- |:----------------------------------:| ------------------:|
+| 10                  | 1 in 10                            | 90%                |
+| 20                  | 1 in 100                           | 99%                |
+| 30                  | 1 in 1000                          | 99.9%              |
+| 40                  | 1 in 10,000                        | 99.99%             |
+| 50                  | 1 in 100,000                       | 99.999%            |
+| 60                  | 1 in 1,000,000                     | 99.9999%           |
+
+The base quality score however is respresented as a ASCII code in fastq and other file formats
+
+Typically the phred33 (sanger format) scale is used by adding 33 to the Phred quality score and looking up the corresponding ASCII character
+
+**Example**
+```
+Phred score of 31 
+31+33 = 64
+
+In Dec column 64 corresponds to '@' ASCII character
+See below
+```
+
+![ACII table](img/ascii_table.png)
 
 
 ### Quality
@@ -150,6 +192,7 @@ General observations:
 Trimming of the reads is required to remove the low quality bases at the 3' end, include reads of a specific minimum length and trim adapters and other technical sequences
 
 To do that we will use Trimmomatic using these options:
+
 * ILLUMINACLIP: Cut adapter and other illumina-specific sequences from the read (2:30:15)
 * TRAILING: Cut bases off the end of a read, if below a threshold quality (20)
 * MINLEN: Drop the read if it is below a specified length (32)
@@ -218,11 +261,11 @@ java -Xmx1G -jar ${BVATOOLS_JAR} readsqc \
 
 
 # Alignment
-The raw reads are now cleaned up of artefacts we can align each lane separatly.
+The raw reads are now cleaned up of artefacts we can align each lane separately.
 
 **Why should this be done separatly?** [Solution](solutions/_aln1.md)
 
-**Why is it important to set Read Group information ?** [Solution](solutions_aln2.md)
+**Why is it important to set Read Group information ?** [Solution](solutions/_aln2.md)
 
 ##Alignment with bwa-mem
 
@@ -302,8 +345,8 @@ Due to the heuristics of the alignment algorithm (i.e. each read pair is optimiz
 
 The Genome Analysis ToolKit (GATK) has a tool called IndelRealigner which performs two steps
 
-   1. Realigner Target Create : Identifies small suspicious regions requiring realignment
-   2. Indel Realigner         : Uses the full alignment context to determine if a indel exist
+   1. Realigner Target Creator : Identifies small suspicious regions requiring realignment
+   2. Indel Realigner          : Uses the full alignment context to determine if a indel exist
 	
 Try command:
     
@@ -326,7 +369,7 @@ java -Xmx2G -jar ${GATK_JAR} \
 
 **How could we make this go faster?** [Solution](solutions/_realign1.md)
 
-**How many regions did it think needed cleaning?** [Solution](solutions/_realign2.md)
+**How many regions were identified for realignment?** [Solution](solutions/_realign2.md)
 
 
 ## FixMates
@@ -370,11 +413,11 @@ We can see that it computed separate measures for each library.
 
 [Note on Duplicate rate](notes/_marduop1.md)
 
-## Base Quality recalibration
-**Why do we need to recalibrate base quality scores ?** [Solution](solutions/_recal1.md)
-
+## Base Quality recalibration (BQSR)
 GATK BaseRecalibrator:
 Accurately recalibrates base quality scores by correcting for various sources of systematic technical error e.g. sequence context, mismatch position within read, etc.
+
+**Why do we need to recalibrate base quality scores ?** [Solution](solutions/_recal1.md)
 
 ```
 java -Xmx2G -jar ${GATK_JAR} \
