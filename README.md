@@ -1,6 +1,7 @@
 
 # Introduction to DNA-Seq processing
 ***By Louie Letourneau, MSc.*** 
+
 ***Edited and Modified by Mathieu Bourgey, Ph.D and Robert Eveleigh, MSc.***
 
 In this workshop, we will present the main steps that are commonly used to process and to analyze sequencing data. We will focus only on whole genome data and provide command lines that allow detecting Single Nucleotide Variants (SNV). This workshop will show you how to launch individual steps of a complete DNA-Seq pipeline
@@ -104,9 +105,10 @@ zgrep -c "^@" raw_reads/NA12878/runSRR_1/NA12878.SRR.33.pair1.fastq.gz
 [Solution](solutions/_fastq3.md)
 
 ####Phred Score
-In the original implementation of Phred scores, information about the size and shape of peaks in sequencing trace files were used to generate an error probability and subsequently converted to a log score. 
+In the original implementation of Phred scores, information about the size and shape of peaks in sequencing trace files were used to generate an error probability and converted to a log score. 
 
 The same principles are used for base quality made by the base calling method of the NGS sequencer i.e the base quality is the probability of the base to have been called incorrectly
+
 
 ```
 Phred score/Base quality  = - 10 * log10(error probability)
@@ -120,8 +122,9 @@ e.g. Base Quality of 10
 
 ```
 
+
 | Phred Quality Score | Probability of incorrect base call | Base call accuracy |
-| ------------------- |:----------------------------------:| ------------------:|
+|:------------------- |:-----------------------------------|:------------------ |
 | 10                  | 1 in 10                            | 90%                |
 | 20                  | 1 in 100                           | 99%                |
 | 30                  | 1 in 1000                          | 99.9%              |
