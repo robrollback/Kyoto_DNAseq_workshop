@@ -23,10 +23,9 @@ This work is licensed under a [Creative Commons Attribution-ShareAlike 3.0 Unpor
 ### Environment setup
 ```
 export PICARD_JAR=/usr/local/bin/picard.jar 
-export SNPEFF_HOME=/usr/local/src/snpEff/  
 export GATK_JAR=/usr/local/bin/GenomeAnalysisTK.jar
-export BVATOOLS_JAR=/usr/local/bin/bvatools-1.4-full.jar 
-export TRIMMOMATIC_JAR=/usr/local/bin/trimmomatic-0.33.jar 
+export BVATOOLS_JAR=/usr/local/bin/bvatools-1.6-full.jar 
+export TRIMMOMATIC_JAR=/usr/local/bin/trimmomatic-0.35.jar 
 export REF=/home/mBourgey/kyoto_workshop_WGS_2015/references/ 
 
 cd $HOME 
