@@ -29,7 +29,7 @@ export TRIMMOMATIC_JAR=/usr/local/bin/trimmomatic-0.35.jar
 export REF=/home/mBourgey/kyoto_workshop_WGS_2015/references/ 
 
 cd $HOME 
-rsync -avP /home/reveleigh/cleanCopy/ $HOME/workshop 
+rsync -avP /home/reveleigh/cleanCopy/workshop $HOME 
 cd $HOME/workshop/ 
 
 ls
