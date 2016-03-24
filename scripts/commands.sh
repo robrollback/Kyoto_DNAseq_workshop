@@ -7,7 +7,7 @@ export TRIMMOMATIC_JAR=/usr/local/bin/trimmomatic-0.35.jar
 export REF=/home/mBourgey/kyoto_workshop_WGS_2015/references/ 
 
 cd $HOME 
-rsync -avP /home/mBourgey/cleanCopy/ $HOME/workshop 
+rsync -avP /home/reveleigh/cleanCopy/ $HOME/workshop 
 cd $HOME/workshop/ 
 
 zless -S raw_reads/NA12878/runSRR_1/NA12878.SRR.33.pair1.fastq.gz
